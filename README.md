@@ -11,3 +11,6 @@ Ultrasound inspiration:
 - https://www.slideshare.net/Eduardyantov/ultrasound-segmentation-kaggle-review
 - https://github.com/yihui-he/Ultrasound-Nerve-Segmentation
 - https://github.com/EdwardTyantov/ultrasound-nerve-segmentation
+
+TODO:
+

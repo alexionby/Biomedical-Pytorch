@@ -1,0 +1,10 @@
+/data/train/imgs/*.*
+!/data/train/imgs/*.md
+/data/train/masks/*.*
+!/data/train/imgs/*.md
+
+/data/val/imgs/*.*
+!/data/val/imgs/*.md
+/data/val/masks/*.*
+!/data/val/masks/*.md
+
