@@ -1,12 +1,17 @@
 # Adapted from https://discuss.pytorch.org/t/unet-implementation/426
+import os
 
 import torch
 from torch import nn
+from torch.optim import SGD
 import torch.nn.functional as F
 
+from torch.autograd import Variable
+
+from loader import dataloader
 
 class UNet(nn.Module):
-    def __init__(self, in_channels=1, n_classes=2, depth=5, wf=6, padding=False,
+    def __init__(self, in_channels=3, n_classes=1, depth=5, wf=6, padding=False,
                  batch_norm=False, up_mode='upconv'):
         """
         Implementation of
@@ -112,3 +117,63 @@ class UNetUpBlock(nn.Module):
         out = self.conv_block(out)
 
         return out
+
+def main():
+    
+    if 'first_model.pt' in os.listdir('.'):
+        model = torch.load('first_model.pt')
+    else:
+        model = UNet()
+
+    model.cuda()
+
+    criterion = nn.MSELoss()
+
+    # Observe that all parameters are being optimized
+    optimizer = SGD(model.parameters(), lr=0.001, momentum=0.9)
+
+    for epoch in range(30):
+
+        epoch_loss = 0
+        print("epoch: ", epoch)
+
+        for i_batch, sample_batched in enumerate(dataloader(batch_size=3)):
+            #print(i_batch, sample_batched['image'].size(),
+            #    sample_batched['mask'].size())
+
+            inputs = Variable(sample_batched['image'].cuda())
+            labels = Variable(sample_batched['mask'].cuda())
+
+            optimizer.zero_grad()
+
+            outputs = model(inputs)
+            #print(outputs)
+
+            probs = F.sigmoid(outputs)
+            #print(probs.shape)
+
+            probs_flat = probs.view(-1)
+            #print(probs_flat.shape)
+
+            y_flat = labels.view(-1)
+            #print(y_flat.shape)
+
+            loss = criterion(probs_flat, y_flat)
+            
+            loss = criterion(outputs, labels)
+
+            #print(loss.data[0] )
+            epoch_loss += loss.data[0]
+
+            # backward + optimize only if in training phase
+            loss.backward()
+            optimizer.step()
+
+            #if i_batch == 2:
+            #    break
+        
+        print("epoch loss:", epoch_loss / (i_batch + 1))
+        torch.save(model, 'first_model.pt')
+
+if __name__ == '__main__':
+    main()
