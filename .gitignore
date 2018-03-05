@@ -8,12 +8,9 @@ data/val/images/*.*
 data/val/masks/*.*
 !data/val/masks/*.md
 
-<<<<<<< HEAD
 #dev files
 /learn
 /trash
 
 #models
 *.pt
-=======
->>>>>>> 8a04133eb9e2bae5b61fcb1fd1c03056fdf8127b
