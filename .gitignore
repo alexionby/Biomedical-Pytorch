@@ -14,3 +14,9 @@ data/val/masks/*.*
 
 #models
 *.pt
+
+#python stuff
+__pycache__
+
+#vscode
+.vscode

@@ -1,5 +1,5 @@
 #my inputs
-from model import UNet
+from model import UNet, UNetConvBlock, UNetUpBlock
 from loader import dataloader
 
 # PyTorch
@@ -35,8 +35,6 @@ def main():
         print("epoch: ", epoch)
 
         for i_batch, sample_batched in enumerate(dataloader(batch_size=3)):
-            #print(i_batch, sample_batched['image'].size(),
-            #    sample_batched['mask'].size())
 
             inputs = Variable(sample_batched['image']).cuda()
             labels = Variable(sample_batched['mask']).cuda()
@@ -44,24 +42,11 @@ def main():
             optimizer.zero_grad()
 
             outputs = model(inputs)
-            #print(outputs)
 
             probs = F.sigmoid(outputs)
-            #print(probs.shape)
 
-            #probs_flat = probs.view(-1)
-            #print(probs_flat.shape)
-
-            y_flat = labels.view(-1)
-            #print(y_flat.shape)
-
-            #print(probs_flat.shape, y_flat.shape)
-            loss = criterion(outputs.view(-1), y_flat)
-            #loss = criterion(probs_flat, y_flat)
-            
             loss = criterion(outputs, labels)
 
-            #print(loss.data[0] )
             epoch_loss += loss.data[0]
 
             # backward + optimize only if in training phase
@@ -83,7 +68,7 @@ def main():
         im.save("learn/image/" + str(epoch) + "_final.jpg", "JPEG")
         
         print("epoch loss:", epoch_loss / (i_batch + 1))
-        torch.save(model, 'first_model.pt')
+        torch.save(model, 'model.pt')
 
 if __name__ == '__main__':
     main()
