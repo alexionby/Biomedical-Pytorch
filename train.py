@@ -6,6 +6,7 @@ from loader import dataloader
 import torch
 from torch import nn
 from torch.optim import SGD
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 from torch.autograd import Variable
 import torch.nn.functional as F
 import torchvision
@@ -28,8 +29,9 @@ def main():
 
     # Observe that all parameters are being optimized
     optimizer = SGD(model.parameters(), lr=0.001, momentum=0.9)
+    scheduler = ReduceLROnPlateau(optimizer, 'min', patience=50, verbose=True, factor=0.25)
 
-    for epoch in range(300):
+    for epoch in range(2000):
 
         epoch_loss = 0
         print("epoch: ", epoch)
@@ -53,10 +55,6 @@ def main():
             loss.backward()
             optimizer.step()
 
-            #if i_batch == 2:
-            #    break
-        
-
 
         im = torchvision.transforms.ToPILImage()(probs.data[0].cpu())
         im.save("learn/pred/" + str(epoch) + "_final.jpg" , "JPEG")
@@ -66,9 +64,11 @@ def main():
         
         im = torchvision.transforms.ToPILImage()(sample_batched['image'][0])
         im.save("learn/image/" + str(epoch) + "_final.jpg", "JPEG")
-        
+
         print("epoch loss:", epoch_loss / (i_batch + 1))
         torch.save(model, 'model.pt')
+
+        scheduler.step(epoch_loss)
 
 if __name__ == '__main__':
     main()

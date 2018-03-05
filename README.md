@@ -14,3 +14,6 @@ Ultrasound inspiration:
 
 TODO:
 
+- Add Elastic Transforms
+- Add Color augmentations
+- Add CRF
