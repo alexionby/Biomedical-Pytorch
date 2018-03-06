@@ -40,7 +40,7 @@ def __getitem__(self,index):
     return img, target
 """
 
-def transform(sample, img_gray=False):
+def transform(sample, img_gray=False, crop_in=512, crop_out=512):
 
     # time-based random for continuous learning
     #seed = int(str(time.time()).split('.')[1])
@@ -51,7 +51,7 @@ def transform(sample, img_gray=False):
 
     if img_gray:
         sample['image'] = transforms.Compose([
-            transforms.RandomCrop((512,512)),
+            transforms.RandomCrop((crop_in, crop_in)),
             transforms.RandomHorizontalFlip(),
             transforms.RandomVerticalFlip(),
             transforms.Grayscale(1),
@@ -60,7 +60,7 @@ def transform(sample, img_gray=False):
     
     else:
         sample['image'] = transforms.Compose([
-            transforms.RandomCrop((512,512)),
+            transforms.RandomCrop((crop_in, crop_in)),
             transforms.RandomHorizontalFlip(),
             transforms.RandomVerticalFlip(),
             transforms.ToTensor(),
@@ -68,10 +68,10 @@ def transform(sample, img_gray=False):
     
     random.seed(seed)
     sample['mask'] = transforms.Compose([
-        transforms.RandomCrop((512,512)),
+        transforms.RandomCrop((crop_in, crop_in)),
         transforms.RandomHorizontalFlip(),
         transforms.RandomVerticalFlip(),
-        transforms.CenterCrop((324,324)),
+        transforms.CenterCrop((crop_out, crop_out)),
         transforms.Grayscale(1),
         transforms.ToTensor(),
     ])(sample['mask'])
@@ -119,7 +119,7 @@ class UnetDataset(Dataset):
 
         return sample
 
-def dataloader(batch_size=2):
+def dataloader(batch_size=2, crop_in=512, crop_out=512):
 
     transformed_dataset = UnetDataset(True, False, transform=transform)
     dataloader = DataLoader(transformed_dataset, batch_size=batch_size,
@@ -127,6 +127,8 @@ def dataloader(batch_size=2):
     
     return dataloader
 
+
+# For Tests
 
 def main():
     transformed_dataset = UnetDataset(True, True, transform=transform)

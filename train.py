@@ -14,29 +14,66 @@ import torchvision
 # Def. inputs
 import os
 from PIL import Image
+import argparse
 
+parser = argparse.ArgumentParser(description='Setting model parameters')
+
+parser.add_argument('--depth', default=5, type=int, help="Unet depth")
+parser.add_argument('--n','--n_filters', type=int, default=5, help="2**N filters on first Layer")
+parser.add_argument('--ch', type=int, default=3, help="Num of channels")
+parser.add_argument('--cl','--n_classes', default=1, type=int, help="number of output channels(classes)")
+parser.add_argument('--pad', type=bool, default=False, help="""if True, apply padding such that the input shape
+                                                                is the same as the output.
+                                                                This may introduce artifacts""")
+parser.add_argument('--bn', type=bool, default=True, help="""Use BatchNorm after layers with an
+                                                                        activation function""")
+parser.add_argument('--up_mode', default='upconv', choices=['upconv', 'upsample'], help="""One of 'upconv' or 'upsample'.
+                                                                            'upconv' will use transposed convolutions for
+                                                                            learned upsampling.
+                                                                            'upsample' will use bilinear upsampling.""")
+parser.add_argument('--model', help="Path to model for loading")
+
+parser.add_argument('--batch_size', help="Size of batch", default=4, type=int )
+
+parser.add_argument('--crop_size', help="Size of subimage for random crop", type=int, default=512)
+
+args = parser.parse_args()
+print(args)
 
 def main():
     
-    if 'model.pt' in os.listdir('.'):
+    if args.model:
         model = torch.load('model.pt')
     else:
-        model = UNet(batch_norm=True)
+        model = UNet(in_channels=args.ch,
+                     n_classes=args.cl,
+                     depth=args.depth,
+                     wf=args.n,
+                     padding=args.pad,
+                     batch_norm=args.bn,
+                     up_mode=args.up_mode
+                        )
+    
+    output_size = model( Variable(torch.zeros(1, args.ch ,512,512))).size()
+    output_heigth = output_size[2]
+    output_width = output_size[3]
+    print("output size:", (output_heigth), output_width)
+
+    data = dataloader(batch_size=args.batch_size)
 
     model.cuda()
 
     criterion = nn.BCEWithLogitsLoss()
-
     # Observe that all parameters are being optimized
-    optimizer = SGD(model.parameters(), lr=0.001, momentum=0.9)
-    scheduler = ReduceLROnPlateau(optimizer, 'min', patience=50, verbose=True, factor=0.25)
+    optimizer = SGD(model.parameters(), lr=0.01, momentum=0.9)
+    scheduler = ReduceLROnPlateau(optimizer, 'min', patience=15, verbose=True, factor=0.25)
 
-    for epoch in range(2000):
+    for epoch in range(300):
 
         epoch_loss = 0
         print("epoch: ", epoch)
 
-        for i_batch, sample_batched in enumerate(dataloader(batch_size=3)):
+        for i_batch, sample_batched in enumerate(data):
 
             inputs = Variable(sample_batched['image']).cuda()
             labels = Variable(sample_batched['mask']).cuda()
@@ -44,6 +81,9 @@ def main():
             optimizer.zero_grad()
 
             outputs = model(inputs)
+
+            #print(inputs.shape, labels.shape)
+            #print(outputs.shape)
 
             probs = F.sigmoid(outputs)
 
