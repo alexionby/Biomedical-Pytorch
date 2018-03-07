@@ -43,3 +43,10 @@ optimizer.step()
 
 # cyclic learning rate
 
+# DILATED CONV
+https://github.com/lyakaap/Kaggle-Carvana-3rd-Place-Solution/blob/master/model.py
+https://www.kaggle.com/c/carvana-image-masking-challenge/discussion/40199
+
+# ----
+https://towardsdatascience.com/pytorch-tutorial-distilled-95ce8781a89c
+https://arxiv.org/abs/1706.06169
