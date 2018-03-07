@@ -39,7 +39,10 @@ optimizer.step()
 
 # CLEVER WEIGHTS IN BCELOSS
 
-# CLEVER LOSS LIKE: f(x) = BCE + 1 - DICE
+# CHANGEABLE LOSS: 
+- f(x) = BCE + 1 - DICE
+- f(x) = DICE
+- f(x) = BCE
 
 # cyclic learning rate
 
