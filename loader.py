@@ -9,7 +9,7 @@ from torchvision import transforms, utils
 from PIL import Image
 #import cv2
 
-from skimage.morphology import erosion, binary_erosion
+from skimage.morphology import binary_erosion, binary_dilation
 from skimage.exposure import rescale_intensity
 from skimage.color import rgb2gray
 
@@ -70,8 +70,22 @@ def transform(sample, img_gray=False, crop_in=512, crop_out=512):
 
     binary_mask = sample['mask'].numpy().squeeze()
     weights = np.ones( binary_mask.shape, dtype=float) * 0.5
-    mask_boundary = binary_mask - binary_erosion(binary_mask)
-    weights[ mask_boundary > 0 ] = 1.0
+
+    binary_eroded = binary_mask.copy()
+    for pad in range(6):
+        mask_boundary = binary_eroded - binary_erosion(binary_eroded)
+        binary_eroded = binary_eroded - mask_boundary
+        weights[ mask_boundary > 0 ] = 1.0 - 0.1 * pad
+    
+    binary_dilated = binary_mask.copy()
+    for pad in range(6):
+        mask_boundary = binary_dilation(binary_dilated) - binary_dilated
+        binary_dilated = binary_dilated + mask_boundary
+        weights[ mask_boundary > 0 ] = 1.0 - 0.1 * pad
+    
+    #print(weights.min())
+    #img = Image.fromarray(np.uint8(weights * 255))
+    #img.save('result.png',"PNG")
 
     sample['weights'] = torch.FloatTensor(weights).unsqueeze_(0)
 

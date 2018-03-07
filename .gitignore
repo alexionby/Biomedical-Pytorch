@@ -15,6 +15,12 @@ data/val/masks/*.*
 #models
 *.pt
 
+#images
+*.jpg 
+*.JPG
+*.png
+*.PNG
+
 #python stuff
 __pycache__
 

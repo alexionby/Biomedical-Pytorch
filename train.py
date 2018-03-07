@@ -68,7 +68,7 @@ def main():
     criterion = nn.BCEWithLogitsLoss()
     # Observe that all parameters are being optimized
     optimizer = SGD(model.parameters(), lr=0.01, momentum=0.9)
-    scheduler = ReduceLROnPlateau(optimizer, 'min', patience=15, verbose=True, factor=0.25)
+    scheduler = ReduceLROnPlateau(optimizer, 'min', patience=5, verbose=True, factor=0.5)
 
     for epoch in range(300):
 
@@ -91,7 +91,7 @@ def main():
             probs = F.sigmoid(outputs)
 
             
-            loss = F.binary_cross_entropy_with_logits(outputs, labels.float(), weight=weights) 
+            loss = F.binary_cross_entropy_with_logits(outputs, labels.float()) #, weight=weights) 
             #loss = criterion(outputs, labels.float())
 
             epoch_loss += loss.data[0]
