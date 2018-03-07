@@ -9,6 +9,10 @@ from torchvision import transforms, utils
 from PIL import Image
 #import cv2
 
+from skimage.morphology import erosion, binary_erosion
+from skimage.exposure import rescale_intensity
+from skimage.color import rgb2gray
+
 import time
 
 from matplotlib import pyplot as plt
@@ -42,30 +46,18 @@ def __getitem__(self,index):
 
 def transform(sample, img_gray=False, crop_in=512, crop_out=512):
 
-    # time-based random for continuous learning
-    #seed = int(str(time.time()).split('.')[1])
-
     seed = np.random.randint(2147483647)
 
     random.seed(seed)
+    sample['image'] = transforms.Compose([
+        transforms.RandomCrop((crop_in, crop_in)),
+        transforms.RandomHorizontalFlip(),
+        transforms.RandomVerticalFlip(),
+        # maybe bug here
+        #transforms.Lambda( lambda x: transforms.Grayscale(1)(x) if img_gray else x ),
+        transforms.ToTensor(),
+    ])(sample['image'])
 
-    if img_gray:
-        sample['image'] = transforms.Compose([
-            transforms.RandomCrop((crop_in, crop_in)),
-            transforms.RandomHorizontalFlip(),
-            transforms.RandomVerticalFlip(),
-            transforms.Grayscale(1),
-            transforms.ToTensor(),
-        ])(sample['image'])
-    
-    else:
-        sample['image'] = transforms.Compose([
-            transforms.RandomCrop((crop_in, crop_in)),
-            transforms.RandomHorizontalFlip(),
-            transforms.RandomVerticalFlip(),
-            transforms.ToTensor(),
-        ])(sample['image'])
-    
     random.seed(seed)
     sample['mask'] = transforms.Compose([
         transforms.RandomCrop((crop_in, crop_in)),
@@ -74,7 +66,14 @@ def transform(sample, img_gray=False, crop_in=512, crop_out=512):
         transforms.CenterCrop((crop_out, crop_out)),
         transforms.Grayscale(1),
         transforms.ToTensor(),
-    ])(sample['mask'])
+    ])(sample['mask']).byte()
+
+    binary_mask = sample['mask'].numpy().squeeze()
+    weights = np.ones( binary_mask.shape, dtype=float) * 0.5
+    mask_boundary = binary_mask - binary_erosion(binary_mask)
+    weights[ mask_boundary > 0 ] = 1.0
+
+    sample['weights'] = torch.FloatTensor(weights).unsqueeze_(0)
 
     return sample
 
