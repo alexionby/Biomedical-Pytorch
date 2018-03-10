@@ -1,6 +1,7 @@
 #my inputs
 from model import UNet, UNetConvBlock, UNetUpBlock
 from loader import dataloader
+from losses import SoftDiceLoss
 
 # PyTorch
 import torch

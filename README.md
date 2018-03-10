@@ -1,3 +1,4 @@
+# BioMedical-PyTorch
 # Pytorch-Unet-BSMU
 
 Inspiration:
@@ -11,6 +12,14 @@ Ultrasound inspiration:
 - https://www.slideshare.net/Eduardyantov/ultrasound-segmentation-kaggle-review
 - https://github.com/yihui-he/Ultrasound-Nerve-Segmentation
 - https://github.com/EdwardTyantov/ultrasound-nerve-segmentation
+
+Additional:
+- http://campar.in.tum.de/pub/milletari2016Vnet/milletari2016Vnet.pdf
+- https://arxiv.org/pdf/1606.04797.pdf
+- https://jeffknupp.com/blog/2014/06/18/improve-your-python-python-classes-and-object-oriented-programming/
+- https://github.com/lanpa/tensorboard-pytorch
+- https://arxiv.org/pdf/1505.04597.pdf
+- https://tuatini.me/practical-image-segmentation-with-unet/
 
 TODO:
 

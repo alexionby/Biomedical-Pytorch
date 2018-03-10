@@ -121,7 +121,8 @@ class UnetDataset(Dataset):
         img_name = os.path.join(self.images_path, os.listdir(self.images_path)[idx])
 
         # WEIRD CODE ALERT!!! 
-        mask_name = os.path.join(self.masks_path, os.listdir(self.images_path)[idx][:-3] + 'tif')
+        #mask_name = os.path.join(self.masks_path, os.listdir(self.images_path)[idx][:-3] + 'tif')
+        mask_name = os.path.join(self.masks_path, os.listdir(self.images_path)[idx][:-14] + 'mask.png')
 
         image = Image.open(img_name)
         mask  = Image.open(mask_name)

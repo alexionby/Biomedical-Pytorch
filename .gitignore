@@ -1,15 +1,4 @@
-data/train/images/*.*
-!data/train/images/*.md
-data/train/masks/*.*
-!data/train/masks/*.md
-
-data/val/images/*.*
-!data/val/images/*.md
-data/val/masks/*.*
-!data/val/masks/*.md
-
 #dev files
-/learn
 /trash
 
 #models
@@ -20,6 +9,10 @@ data/val/masks/*.*
 *.JPG
 *.png
 *.PNG
+*.tif
+*.tiff
+*.TIF 
+*.TIFF
 
 #python stuff
 __pycache__
