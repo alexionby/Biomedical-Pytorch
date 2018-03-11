@@ -2,6 +2,7 @@
 from model import UNet, UNetConvBlock, UNetUpBlock
 from loader import dataloader
 from losses import SoftDiceLoss
+from description import DataDescription
 
 # PyTorch
 import torch
@@ -16,12 +17,13 @@ import torchvision
 import os
 from PIL import Image
 import argparse
+from tqdm import tqdm
 
 parser = argparse.ArgumentParser(description='Setting model parameters')
 
 parser.add_argument('--depth', default=5, type=int, help="Unet depth")
 parser.add_argument('--n','--n_filters', type=int, default=5, help="2**N filters on first Layer")
-parser.add_argument('--ch', type=int, default=3, help="Num of channels")
+parser.add_argument('--ch', type=int, default=1, help="Num of channels")
 parser.add_argument('--cl','--n_classes', default=1, type=int, help="number of output channels(classes)")
 parser.add_argument('--pad', type=bool, default=False, help="""if True, apply padding such that the input shape
                                                                 is the same as the output.
@@ -55,6 +57,8 @@ def main():
                      up_mode=args.up_mode
                         )
     
+    print('parameters: ', model)
+    
     #output_size = model( Variable(torch.zeros(1, args.ch ,512,512))).size()
     #print(list(model.modules())[5])
 
@@ -76,7 +80,7 @@ def main():
         epoch_loss = 0
         print("epoch: ", epoch)
 
-        for i_batch, sample_batched in enumerate(data):
+        for i_batch, sample_batched in tqdm(enumerate(data)):
 
             inputs = Variable(sample_batched['image']).cuda()
             labels = Variable(sample_batched['mask']).cuda()

@@ -25,6 +25,9 @@ IMG_EXTENSIONS.append('tif')
 import warnings
 warnings.filterwarnings("ignore")
 
+#my import
+from description import DataDescription
+
 """
 def __getitem__(self,index):      
     img = Image.open(self.data[index]).convert('RGB')
@@ -53,8 +56,6 @@ def transform(sample, img_gray=False, crop_in=512, crop_out=512):
         transforms.RandomCrop((crop_in, crop_in)),
         transforms.RandomHorizontalFlip(),
         transforms.RandomVerticalFlip(),
-        # maybe bug here
-        #transforms.Lambda( lambda x: transforms.Grayscale(1)(x) if img_gray else x ),
         transforms.ToTensor(),
     ])(sample['image'])
 
@@ -64,7 +65,6 @@ def transform(sample, img_gray=False, crop_in=512, crop_out=512):
         transforms.RandomHorizontalFlip(),
         transforms.RandomVerticalFlip(),
         transforms.CenterCrop((crop_out, crop_out)),
-        transforms.Grayscale(1),
         transforms.ToTensor(),
     ])(sample['mask']).byte()
 
@@ -91,10 +91,20 @@ def transform(sample, img_gray=False, crop_in=512, crop_out=512):
 
     return sample
 
-class UnetDataset(Dataset):
+class UnetDataset(Dataset, DataDescription):
     """Unet images and masks"""
 
-    def __init__(self, train=True, img_gray=False, transform=None):
+    def __init__(self,
+                 img_channels = 1,
+                 img_ext = DataDescription.common_extensions,
+                 img_path = 'data/images',
+                 mask_channels = 1, 
+                 mask_ext = DataDescription.common_extensions,
+                 mask_path = 'data/masks',
+                 common_length=-14, #None,
+                 valid_split = 0.25, #None,
+                 valid_shuffle = True,
+                 transform=None):
         """
         Args:
             train (boolean): Shows whether it's trainable images or not
@@ -102,30 +112,34 @@ class UnetDataset(Dataset):
             transform (callable, optional): Optional transform to be applied
                 on images and masks sample.
         """
-        self.img_gray = img_gray
-        self.folder = "train" if train else "val"
-        self.images_path = os.path.join("data", self.folder, "images")
-        self.masks_path  = os.path.join("data", self.folder, "masks")
 
-        #print("folders:", self.images_path, self.masks_path)
-        #print("sizes:", len(os.listdir(self.images_path)), len(os.listdir(self.masks_path)))
+        DataDescription.__init__(self,
+                                 img_channels,
+                                 img_ext,
+                                 img_path,
+                                 mask_channels, 
+                                 mask_ext,
+                                 mask_path,
+                                 common_length,
+                                 valid_split,
+                                 valid_shuffle)
         
-        assert len(os.listdir(self.images_path)) ==  len(os.listdir(self.masks_path))
+        print('channels',self.img_channels)
+        print(self.train_images_path)
 
+        self.img_gray = True if self.img_channels == 1 else False
         self.transform = transform
 
     def __len__(self):
-        return len(os.listdir(self.images_path))
+        return len(os.listdir(self.train_images_path))
 
     def __getitem__(self, idx):
-        img_name = os.path.join(self.images_path, os.listdir(self.images_path)[idx])
-
-        # WEIRD CODE ALERT!!! 
-        #mask_name = os.path.join(self.masks_path, os.listdir(self.images_path)[idx][:-3] + 'tif')
-        mask_name = os.path.join(self.masks_path, os.listdir(self.images_path)[idx][:-14] + 'mask.png')
+        img_name = os.path.join(self.train_images_path, self.train_images[idx])
+        mask_name = os.path.join(self.train_masks_path, self.train_masks[idx])
 
         image = Image.open(img_name)
         mask  = Image.open(mask_name)
+
         sample = {'image': image, 'mask': mask}
 
         if self.transform:
@@ -135,9 +149,11 @@ class UnetDataset(Dataset):
 
 def dataloader(batch_size=2, crop_in=512, crop_out=512):
 
-    transformed_dataset = UnetDataset(True, False, transform=transform)
-    dataloader = DataLoader(transformed_dataset, batch_size=batch_size,
-                        shuffle=True, num_workers=4)
+    transformed_dataset = UnetDataset(transform=transform)
+    dataloader = DataLoader(transformed_dataset, 
+                            batch_size=batch_size,
+                            shuffle=True, 
+                            num_workers=4)
     
     return dataloader
 
@@ -145,13 +161,14 @@ def dataloader(batch_size=2, crop_in=512, crop_out=512):
 # For Tests
 
 def main():
-    transformed_dataset = UnetDataset(True, True, transform=transform)
+
+    transformed_dataset = UnetDataset(transform=transform)
 
     for i in range(len(transformed_dataset)):
         sample = transformed_dataset[i]
 
         print(i, sample['image'].size(), sample['mask'].size())
-        out = torch.cat((sample['image'],sample['mask']), 2)
+        out = torch.cat((sample['image'],sample['mask'].float()), 2)
         print(out.shape)
         out = utils.make_grid(out)
         print(out.shape)
