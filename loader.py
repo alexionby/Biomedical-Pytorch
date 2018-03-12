@@ -47,7 +47,7 @@ def __getitem__(self,index):
     return img, target
 """
 
-def transform(sample, img_gray=False, crop_in=512, crop_out=512):
+def transform(sample, img_gray=False, crop_in=512, crop_out=512, weights_function=False):
 
     seed = np.random.randint(2147483647)
 
@@ -68,26 +68,31 @@ def transform(sample, img_gray=False, crop_in=512, crop_out=512):
         transforms.ToTensor(),
     ])(sample['mask']).byte()
 
-    binary_mask = sample['mask'].numpy().squeeze()
-    weights = np.ones( binary_mask.shape, dtype=float) * 0.5
+    if weights_function:
 
-    binary_eroded = binary_mask.copy()
-    for pad in range(6):
-        mask_boundary = binary_eroded - binary_erosion(binary_eroded)
-        binary_eroded = binary_eroded - mask_boundary
-        weights[ mask_boundary > 0 ] = 1.0 - 0.1 * pad
-    
-    binary_dilated = binary_mask.copy()
-    for pad in range(6):
-        mask_boundary = binary_dilation(binary_dilated) - binary_dilated
-        binary_dilated = binary_dilated + mask_boundary
-        weights[ mask_boundary > 0 ] = 1.0 - 0.1 * pad
-    
-    #print(weights.min())
-    #img = Image.fromarray(np.uint8(weights * 255))
-    #img.save('result.png',"PNG")
+        binary_mask = sample['mask'].numpy().squeeze()
+        weights = np.ones( binary_mask.shape, dtype=float) * 0.5
 
-    sample['weights'] = torch.FloatTensor(weights).unsqueeze_(0)
+        binary_eroded = binary_mask.copy()
+        for pad in range(6):
+            mask_boundary = binary_eroded - binary_erosion(binary_eroded)
+            binary_eroded = binary_eroded - mask_boundary
+            weights[ mask_boundary > 0 ] = 1.0 - 0.1 * pad
+        
+        binary_dilated = binary_mask.copy()
+        for pad in range(6):
+            mask_boundary = binary_dilation(binary_dilated) - binary_dilated
+            binary_dilated = binary_dilated + mask_boundary
+            weights[ mask_boundary > 0 ] = 1.0 - 0.1 * pad
+        
+        #print(weights.min())
+        #img = Image.fromarray(np.uint8(weights * 255))
+        #img.save('result.png',"PNG")
+
+        sample['weights'] = torch.FloatTensor(weights).unsqueeze_(0)
+
+    else:
+        sample['weights'] = torch.ones(sample['mask'].shape)
 
     return sample
 
@@ -129,13 +134,22 @@ class UnetDataset(Dataset, DataDescription):
 
         self.img_gray = True if self.img_channels == 1 else False
         self.transform = transform
+        self.is_train = True
 
     def __len__(self):
-        return len(os.listdir(self.train_images_path))
+        if self.is_train:
+            return len(os.listdir(self.train_images_path))
+        else:
+            return len(os.listdir(self.valid_images_path))
 
     def __getitem__(self, idx):
-        img_name = os.path.join(self.train_images_path, self.train_images[idx])
-        mask_name = os.path.join(self.train_masks_path, self.train_masks[idx])
+
+        if self.is_train:
+            img_name = os.path.join(self.train_images_path, self.train_images[idx])
+            mask_name = os.path.join(self.train_masks_path, self.train_masks[idx])
+        else:
+            img_name = os.path.join(self.valid_images_path, self.valid_images[idx])
+            mask_name = os.path.join(self.valid_masks_path, self.valid_masks[idx])
 
         image = Image.open(img_name)
         mask  = Image.open(mask_name)
@@ -146,6 +160,10 @@ class UnetDataset(Dataset, DataDescription):
             sample = self.transform(sample, img_gray=self.img_gray)
 
         return sample
+
+    
+    def switch_mode(self):
+        self.train_mode = not self.train_mode
 
 def dataloader(batch_size=2, crop_in=512, crop_out=512):
 
