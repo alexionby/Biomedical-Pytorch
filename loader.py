@@ -47,16 +47,19 @@ def __getitem__(self,index):
     return img, target
 """
 
-def transform(sample, img_gray=False, crop_in=512, crop_out=512, weights_function=False):
+def transform(sample, crop_in=512, crop_out=512, weights_function=False):
+    
+    t = time.time()
+    seed = int(str(t-int(t))[2:])
 
-    seed = np.random.randint(2147483647)
+    #print(seed)
 
     random.seed(seed)
     sample['image'] = transforms.Compose([
         transforms.RandomCrop((crop_in, crop_in)),
         transforms.RandomHorizontalFlip(),
-        #transforms.RandomVerticalFlip(),
-        transforms.RandomRotation(15),
+        transforms.RandomVerticalFlip(),
+        #transforms.RandomRotation(15),
         transforms.ToTensor(),
     ])(sample['image'])
 
@@ -64,37 +67,11 @@ def transform(sample, img_gray=False, crop_in=512, crop_out=512, weights_functio
     sample['mask'] = transforms.Compose([
         transforms.RandomCrop((crop_in, crop_in)),
         transforms.RandomHorizontalFlip(),
-        #transforms.RandomVerticalFlip(),
-        transforms.RandomRotation(15),
+        transforms.RandomVerticalFlip(),
+        #transforms.RandomRotation(15),
         #transforms.CenterCrop((crop_out, crop_out)),
         transforms.ToTensor(),
     ])(sample['mask']).byte()
-
-    if weights_function:
-
-        binary_mask = sample['mask'].numpy().squeeze()
-        weights = np.ones( binary_mask.shape, dtype=float) * 0.5
-
-        binary_eroded = binary_mask.copy()
-        for pad in range(6):
-            mask_boundary = binary_eroded - binary_erosion(binary_eroded)
-            binary_eroded = binary_eroded - mask_boundary
-            weights[ mask_boundary > 0 ] = 1.0 - 0.1 * pad
-        
-        binary_dilated = binary_mask.copy()
-        for pad in range(6):
-            mask_boundary = binary_dilation(binary_dilated) - binary_dilated
-            binary_dilated = binary_dilated + mask_boundary
-            weights[ mask_boundary > 0 ] = 1.0 - 0.1 * pad
-        
-        #print(weights.min())
-        #img = Image.fromarray(np.uint8(weights * 255))
-        #img.save('result.png',"PNG")
-
-        sample['weights'] = torch.FloatTensor(weights).unsqueeze_(0)
-
-    else:
-        sample['weights'] = torch.ones(sample['mask'].shape)
 
     return sample
 
@@ -102,20 +79,20 @@ class UnetDataset(Dataset, DataDescription):
     """Unet images and masks"""
 
     def __init__(self,
-                 img_channels = 1,
+                 img_channels = 3,
                  img_ext = DataDescription.common_extensions,
                  img_path = 'data/images',
                  mask_channels = 1, 
                  mask_ext = DataDescription.common_extensions,
                  mask_path = 'data/masks',
-                 common_length=-14, #None,
+                 common_length=5, #None,
                  valid_split = 0.25, #None,
                  valid_shuffle = True,
                  transform=None):
         """
         Args:
             train (boolean): Shows whether it's trainable images or not
-            img_grayscale (boolean): "RGB" or "GRAY"
+            img_grayscale (boolean): "RGB" or "GR img_gray=self.img_grayAY"
             transform (callable, optional): Optional transform to be applied
                 on images and masks sample.
         """
@@ -159,7 +136,7 @@ class UnetDataset(Dataset, DataDescription):
         sample = {'image': image, 'mask': mask}
 
         if self.transform:
-            sample = self.transform(sample, img_gray=self.img_gray)
+            sample = self.transform(sample)
 
         return sample
 
@@ -167,15 +144,15 @@ class UnetDataset(Dataset, DataDescription):
     def switch_mode(self):
         self.is_train = not self.is_train
 
-def dataloader(batch_size=2, crop_in=512, crop_out=512):
+def dataloader(dataset, batch_size=2, crop_in=512, crop_out=512):
 
-    transformed_dataset = UnetDataset(transform=transform)
-    dataloader_train = DataLoader(transformed_dataset, 
+    #transformed_dataset = UnetDataset(transform=transform)
+    datagen = DataLoader(dataset, 
                             batch_size=batch_size,
                             shuffle=True, 
                             num_workers=4)
 
-    return dataloader_train, transformed_dataset
+    return datagen
 
 
 # For Tests

@@ -26,6 +26,46 @@ TODO:
 - Add Elastic Transforms
 - Add Color augmentations
 - Add CRF
+- Add Dropout ( and model.eval() )
+
+#DOUBLE CONV LAYER?
+
+    def double_conv_layer(x, size, dropout, batch_norm):
+        if K.image_dim_ordering() == 'th':
+            axis = 1
+        else:
+            axis = 3
+        conv = Conv2D(size, (3, 3), padding='same')(x)
+        if batch_norm is True:
+            conv = BatchNormalization(axis=axis)(conv)
+        conv = Activation('relu')(conv)
+        conv = Conv2D(size, (3, 3), padding='same')(conv)
+        if batch_norm is True:
+            conv = BatchNormalization(axis=axis)(conv)
+        conv = Activation('relu')(conv)
+        if dropout > 0:
+            conv = SpatialDropout2D(dropout)(conv)
+    return conv
+
+    def dice_coef(y_true, y_pred):
+    y_true_f = K.flatten(y_true)
+    y_pred_f = K.flatten(y_pred)
+    intersection = K.sum(y_true_f * y_pred_f)
+    return (2.0 * intersection + 1.0) / (K.sum(y_true_f) + K.sum(y_pred_f) + 1.0)
+
+    def jacard_coef(y_true, y_pred):
+        y_true_f = K.flatten(y_true)
+        y_pred_f = K.flatten(y_pred)
+        intersection = K.sum(y_true_f * y_pred_f)
+        return (intersection + 1.0) / (K.sum(y_true_f) + K.sum(y_pred_f) - intersection + 1.0)
+
+
+    def jacard_coef_loss(y_true, y_pred):
+        return -jacard_coef(y_true, y_pred)
+
+
+    def dice_coef_loss(y_true, y_pred):
+    return -dice_coef(y_true, y_pred)
 
 #AUGMENTATIONS
 https://github.com/aleju/imgaug

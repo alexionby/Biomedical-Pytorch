@@ -30,7 +30,7 @@ def main():
         return 
 
     image = transforms.Compose([
-        transforms.RandomCrop((1184,1184)),
+        transforms.RandomCrop((800,800)),
         transforms.ToTensor()
         ])(image).unsqueeze_(0)
 
