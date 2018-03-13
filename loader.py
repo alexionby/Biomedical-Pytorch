@@ -55,7 +55,8 @@ def transform(sample, img_gray=False, crop_in=512, crop_out=512, weights_functio
     sample['image'] = transforms.Compose([
         transforms.RandomCrop((crop_in, crop_in)),
         transforms.RandomHorizontalFlip(),
-        transforms.RandomVerticalFlip(),
+        #transforms.RandomVerticalFlip(),
+        transforms.RandomRotation(15),
         transforms.ToTensor(),
     ])(sample['image'])
 
@@ -63,8 +64,9 @@ def transform(sample, img_gray=False, crop_in=512, crop_out=512, weights_functio
     sample['mask'] = transforms.Compose([
         transforms.RandomCrop((crop_in, crop_in)),
         transforms.RandomHorizontalFlip(),
-        transforms.RandomVerticalFlip(),
-        transforms.CenterCrop((crop_out, crop_out)),
+        #transforms.RandomVerticalFlip(),
+        transforms.RandomRotation(15),
+        #transforms.CenterCrop((crop_out, crop_out)),
         transforms.ToTensor(),
     ])(sample['mask']).byte()
 
@@ -163,17 +165,17 @@ class UnetDataset(Dataset, DataDescription):
 
     
     def switch_mode(self):
-        self.train_mode = not self.train_mode
+        self.is_train = not self.is_train
 
 def dataloader(batch_size=2, crop_in=512, crop_out=512):
 
     transformed_dataset = UnetDataset(transform=transform)
-    dataloader = DataLoader(transformed_dataset, 
+    dataloader_train = DataLoader(transformed_dataset, 
                             batch_size=batch_size,
                             shuffle=True, 
                             num_workers=4)
-    
-    return dataloader
+
+    return dataloader_train, transformed_dataset
 
 
 # For Tests
@@ -196,6 +198,22 @@ def main():
         plt.show()
 
         if i == 3:
+            break
+    
+    for i in range(len(transformed_dataset)):
+        sample = transformed_dataset[i]
+
+        print(i, sample['image'].size(), sample['mask'].size())
+        out = torch.cat((sample['image'],sample['mask'].float()), 2)
+        print(out.shape)
+        out = utils.make_grid(out)
+        print(out.shape)
+        out = out.numpy().transpose((1, 2, 0))
+        print(out.shape)
+        plt.imshow(out)
+        plt.show()
+
+        if i == 2:
             break
 
     print("Dataloader:")

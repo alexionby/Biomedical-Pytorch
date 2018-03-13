@@ -66,7 +66,7 @@ def main():
     #output_width = output_size[3]
     #print("output size:", (output_heigth), output_width)
 
-    data = dataloader(batch_size=args.batch_size)
+    datagen, dataset = dataloader(batch_size=args.batch_size)
 
     model.cuda()
 
@@ -80,11 +80,11 @@ def main():
         epoch_loss = 0
         print("epoch: ", epoch)
 
-        for i_batch, sample_batched in tqdm(enumerate(data)):
+        for i_batch, sample_batched in tqdm(enumerate(datagen)):
 
             inputs = Variable(sample_batched['image']).cuda()
             labels = Variable(sample_batched['mask']).cuda()
-            weights = Variable(sample_batched['weights']).cuda()
+            #weights = Variable(sample_batched['weights']).cuda()
 
             optimizer.zero_grad()
 
@@ -104,7 +104,25 @@ def main():
             # backward + optimize only if in training phase
             loss.backward()
             optimizer.step()
+        
+        print("train loss:", epoch_loss / (i_batch + 1))
+        torch.cuda.empty_cache()
+        dataset.switch_mode()
 
+        for i_batch, sample_batched in tqdm(enumerate(datagen)):
+
+            inputs = Variable(sample_batched['image']).cuda()
+            labels = Variable(sample_batched['mask']).cuda()
+            outputs = model(inputs)
+            loss = F.binary_cross_entropy_with_logits(outputs, labels.float())
+            epoch_loss += loss.data[0]
+        
+        scheduler.step(epoch_loss)
+        print("valid loss:", epoch_loss / (i_batch + 1))
+        torch.save(model, 'model.pt')
+
+        torch.cuda.empty_cache()
+        dataset.switch_mode()
 
         im = torchvision.transforms.ToPILImage()(probs.data[0].cpu())
         im.save("learn/pred/" + str(epoch) + "_final.jpg" , "JPEG")
@@ -114,11 +132,6 @@ def main():
         
         im = torchvision.transforms.ToPILImage()(sample_batched['image'][0])
         im.save("learn/image/" + str(epoch) + "_final.jpg", "JPEG")
-
-        print("epoch loss:", epoch_loss / (i_batch + 1))
-        torch.save(model, 'model.pt')
-
-        scheduler.step(epoch_loss)
 
 if __name__ == '__main__':
     main()
