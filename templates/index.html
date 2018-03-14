@@ -13,26 +13,69 @@
 
   <body>
 
+      <nav class="teal darken-1">
+        <div class="container">
+          <div class="nav-wrapper">
+            <a href="#" class="brand-logo">Biomedical PyTorch</a>
+            <ul id="nav-mobile" class="right hide-on-med-and-down">
+              <li><a href="#Data">Data</a></li>
+              <li><a href="#Augmentations">Augmentations</a></li>
+              <li><a href="#Model">Model</a></li>
+              <li><a href="#Weights">Weights</a></li>
+            </ul>
+          </div>
+        </div>
+      </nav>
+
     <div class="container">
-        <h1 class="center-align">Biomedical PyTorch<img width="75px" src="../static/img/torch.png"></h1>
-        <blockquote>
-          Choose the set of augmentations:
-        </blockquote>
-        <form action="#">
-            <p>
-              <label>
-                <input type="checkbox" class="filled-in" checked="checked" />
-                <span>Random Vertical Flip</span>
-              </label>
-            </p>
-            <p>
-              <label>
-                <input type="checkbox" class="filled-in" checked="checked" />
-                <span>Random Horizontal Flip</span>
-              </label>
-            </p>
-          </form>
-          <a class="waves-effect waves-light btn">Apply augmentations</a>
+
+      <!-- <h1 class="center-align">Biomedical PyTorch</h1> -->
+      <!-- <img src="../static/img/pytorch.svg"> -->
+      <div id="Data" class="section scrollspy">
+          <h2>Data</h2>
+          <blockquote>
+            Validation split:
+          </blockquote>
+          <div class="switch">
+            <label>
+              Off
+              <input type="checkbox">
+              <span class="lever"></span>
+              On
+            </label>
+          </div>
+          <p class="range-field">
+            <input type="range" id="test5" value="25" min="0" max="100" step="5"/>
+          </p>
+
+      </div>
+      <div id="Augmentations" class="section scrollspy">
+          <h2>Augmentations</h2>
+          <blockquote>
+              Choose the set of augmentations:
+            </blockquote>
+            <form action="#">
+                <p>
+                  <label>
+                    <input type="checkbox" class="filled-in" checked="checked" />
+                    <span>Random Vertical Flip</span>
+                  </label>
+                </p>
+                <p>
+                  <label>
+                    <input type="checkbox" class="filled-in" checked="checked" />
+                    <span>Random Horizontal Flip</span>
+                  </label>
+                </p>
+              </form>
+              <a class="waves-effect waves-light btn">Apply augmentations</a>
+        </div>
+        <div id="Model" class="section scrollspy">
+            <h2>Model</h2>
+        </div>
+        <div id="Weights" class="section scrollspy">
+            <h2>Weights</h2>
+        </div>
     </div>
 
     <!--JavaScript at end of body for optimized loading-->

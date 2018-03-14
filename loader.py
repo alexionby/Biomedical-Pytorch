@@ -27,6 +27,7 @@ warnings.filterwarnings("ignore")
 
 #my import
 from description import DataDescription
+from weights import balanced_weights
 
 """
 def __getitem__(self,index):      
@@ -47,12 +48,19 @@ def __getitem__(self,index):
     return img, target
 """
 
-def transform(sample, crop_in=512, crop_out=512, weights_function=False):
+def transform(sample, 
+              crop_in=512, 
+              crop_out=None, 
+              weight_function=False):
     
-    t = time.time()
-    seed = int(str(t-int(t))[2:])
+    if not crop_out:
+        crop_out = crop_in
 
-    #print(seed)
+    t = time.time()
+    try:
+        seed = int(str(t-int(t))[2:])
+    except ValueError:
+        seed = int(str(t-int(t))[2:-4])
 
     random.seed(seed)
     sample['image'] = transforms.Compose([
@@ -69,9 +77,12 @@ def transform(sample, crop_in=512, crop_out=512, weights_function=False):
         transforms.RandomHorizontalFlip(),
         transforms.RandomVerticalFlip(),
         #transforms.RandomRotation(15),
-        #transforms.CenterCrop((crop_out, crop_out)),
+        transforms.CenterCrop((crop_out, crop_out)),
         transforms.ToTensor(),
     ])(sample['mask']).byte()
+
+    if weight_function:
+        sample['weights'] = weight_function(sample['mask'].float())
 
     return sample
 
@@ -88,7 +99,8 @@ class UnetDataset(Dataset, DataDescription):
                  common_length=5, #None,
                  valid_split = 0.25, #None,
                  valid_shuffle = True,
-                 transform=None):
+                 transform=None,
+                 weights_function=None):
         """
         Args:
             train (boolean): Shows whether it's trainable images or not
@@ -113,6 +125,7 @@ class UnetDataset(Dataset, DataDescription):
 
         self.img_gray = True if self.img_channels == 1 else False
         self.transform = transform
+        self.weights_function = weights_function
         self.is_train = True
 
     def __len__(self):
@@ -136,7 +149,7 @@ class UnetDataset(Dataset, DataDescription):
         sample = {'image': image, 'mask': mask}
 
         if self.transform:
-            sample = self.transform(sample)
+            sample = self.transform(sample, weights_function=self.weights_function)
 
         return sample
 

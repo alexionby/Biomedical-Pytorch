@@ -15,12 +15,11 @@ def balanced_weights(tensor):
     weights = torch.ones(tensor.shape)
 
     for label in unique_labels:
-        print(label)
         label = torch.FloatTensor([int(label)])
         # 1 - freq?
         weights[ tensor == label ] = 1 - (tensor == label).nonzero().shape[0] / total
     
-    return weights
+    return weights.unsqueeze_(0)
 
 def strong_binary_borders(tensor, reduce_to = 0.5, reduce_step=0.1):
 

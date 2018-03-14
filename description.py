@@ -33,12 +33,9 @@ class DataDescription:
                  ):
 
         self.img_channels = img_channels
-        #self.img_ext = img_ext
         self.img_path = img_path
         self.mask_channels = mask_channels
-        #self.mask_ext = mask_ext
         self.mask_path = mask_path
-        #self.common_length = common_length
         
         self.images, self.masks = self.find_images(img_path, 
                                                    img_ext, 
@@ -94,8 +91,6 @@ class DataDescription:
         self.valid_images = images[split_value:]
         self.valid_masks = masks[split_value:]
 
-        print(images[:3])
-
         print('Train size: ', len(self.train_images)) 
         print('Validation size: ', len(self.valid_images))
 
@@ -116,8 +111,8 @@ class DataDescription:
         return images, masks
 
 def main():
-    test = DataDescription()
-    
+    """Tests should be here"""
+    DataDescription()
 
 if __name__ == '__main__':
     main()

@@ -3,6 +3,7 @@ from model import UNet, UNetConvBlock, UNetUpBlock
 from loader import dataloader, UnetDataset, transform
 from losses import SoftDiceLoss
 from description import DataDescription
+from weights import balanced_weights
 
 # PyTorch
 import torch
@@ -26,7 +27,7 @@ parser.add_argument('--depth', default=5, type=int, help="Unet depth")
 parser.add_argument('--n','--n_filters', type=int, default=6, help="2**N filters on first Layer")
 parser.add_argument('--ch', type=int, default=3, help="Num of channels")
 parser.add_argument('--cl','--n_classes', default=1, type=int, help="number of output channels(classes)")
-parser.add_argument('--pad', type=bool, default=False, help="""if True, apply padding such that the input shape
+parser.add_argument('--pad', type=bool, default=True, help="""if True, apply padding such that the input shape
                                                                 is the same as the output.
                                                                 This may introduce artifacts""")
 parser.add_argument('--bn', type=bool, default=True, help="""Use BatchNorm after layers with an
@@ -36,13 +37,13 @@ parser.add_argument('--up_mode', default='upconv', choices=['upconv', 'upsample'
                                                                             learned upsampling.
                                                                             'upsample' will use bilinear upsampling.""")
 parser.add_argument('--model', help="Path to model for loading")
-
 parser.add_argument('--batch_size', help="Size of batch", default=4, type=int )
-
 parser.add_argument('--crop_size', help="Size of subimage for random crop", type=int, default=512)
 
 args = parser.parse_args()
 print(args)
+
+
 
 def main():
     
@@ -57,24 +58,14 @@ def main():
                      batch_norm=args.bn,
                      up_mode=args.up_mode
                     )
-    
-    #print('parameters: ', model)
-    
-    #output_size = model( Variable(torch.zeros(1, args.ch ,512,512))).size()
-    #print(list(model.modules())[5])
 
-    #output_heigth = output_size[2]
-    #output_width = output_size[3]
-    #print("output size:", (output_heigth), output_width)
-
-    dataset = UnetDataset(transform=transform)
+    dataset = UnetDataset(transform=transform, weights_function=balanced_weights)
 
     model.cuda()
 
-    criterion = nn.BCEWithLogitsLoss()
     # Observe that all parameters are being optimized
-    optimizer = SGD(model.parameters(), lr=0.01, momentum=0.9)
-    scheduler = ReduceLROnPlateau(optimizer, 'min', patience=3, verbose=True, factor=0.5)
+    optimizer = SGD(model.parameters(), lr=0.1, momentum=0.9)
+    scheduler = ReduceLROnPlateau(optimizer, 'min', patience=5, verbose=True, factor=0.25)
 
     for epoch in range(50):
 
@@ -87,8 +78,7 @@ def main():
 
             inputs = Variable(sample_batched['image']).cuda()
             labels = Variable(sample_batched['mask']).cuda()
-
-            #weights = Variable(sample_batched['weights']).cuda()
+            weights = Variable(sample_batched['weights']).cuda()
 
             optimizer.zero_grad()
             outputs = model(inputs)
@@ -96,7 +86,7 @@ def main():
             #print(inputs.shape, labels.shape)
             #print(outputs.shape)
             
-            loss = F.binary_cross_entropy_with_logits(outputs, labels.float()) #, weight=weights) 
+            loss = F.binary_cross_entropy_with_logits(outputs, labels.float(), weight=weights) 
             #loss = criterion(outputs, labels.float())
 
             epoch_loss += loss.data[0]
@@ -107,7 +97,7 @@ def main():
         
         print("train loss:", epoch_loss / (i_batch + 1))
 
-        del loss, outputs, labels, inputs
+        del loss, outputs, labels, inputs, weights
         torch.cuda.empty_cache()
 
         dataset.switch_mode()
