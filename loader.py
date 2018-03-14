@@ -48,13 +48,30 @@ def __getitem__(self,index):
     return img, target
 """
 
-def transform(sample, 
-              crop_in=512, 
-              crop_out=None, 
-              weight_function=False):
+aug_dict = {
+    'random_crop': transforms.RandomCrop,
+    'center_crop': transforms.CenterCrop,
+    'vertical_flip': transforms.RandomVerticalFlip,
+    'horizontal_flip': transforms.RandomHorizontalFlip,
+    'random_rotate': transforms.RandomRotation,
+}
+
+def transform(sample,
+              weight_function=False,
+              aug_order = [],
+              aug_values = {},
+              ):
     
-    if not crop_out:
-        crop_out = crop_in
+    transforms_list = []
+
+    #args represent the order
+    for augmentation in aug_order:
+        if augmentation in aug_values:
+            transforms_list.append(aug_dict[augmentation](aug_values[augmentation]))
+        else:
+            transforms_list.append(aug_dict[augmentation])
+    
+    transforms_list.append(transforms.ToTensor())
 
     t = time.time()
     try:
@@ -64,7 +81,7 @@ def transform(sample,
 
     random.seed(seed)
     sample['image'] = transforms.Compose([
-        transforms.RandomCrop((crop_in, crop_in)),
+        #transforms.RandomCrop((crop_in, crop_in)),
         transforms.RandomHorizontalFlip(),
         transforms.RandomVerticalFlip(),
         #transforms.RandomRotation(15),
@@ -73,7 +90,7 @@ def transform(sample,
 
     random.seed(seed)
     sample['mask'] = transforms.Compose([
-        transforms.RandomCrop((crop_in, crop_in)),
+        #transforms.RandomCrop((crop_in, crop_in)),
         transforms.RandomHorizontalFlip(),
         transforms.RandomVerticalFlip(),
         #transforms.RandomRotation(15),
