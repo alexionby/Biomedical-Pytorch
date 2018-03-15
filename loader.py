@@ -80,23 +80,10 @@ def transform(sample,
         seed = int(str(t-int(t))[2:-4])
 
     random.seed(seed)
-    sample['image'] = transforms.Compose([
-        #transforms.RandomCrop((crop_in, crop_in)),
-        transforms.RandomHorizontalFlip(),
-        transforms.RandomVerticalFlip(),
-        #transforms.RandomRotation(15),
-        transforms.ToTensor(),
-    ])(sample['image'])
+    sample['image'] = transforms.Compose(transforms_list)(sample['image'])
 
     random.seed(seed)
-    sample['mask'] = transforms.Compose([
-        #transforms.RandomCrop((crop_in, crop_in)),
-        transforms.RandomHorizontalFlip(),
-        transforms.RandomVerticalFlip(),
-        #transforms.RandomRotation(15),
-        transforms.CenterCrop((crop_out, crop_out)),
-        transforms.ToTensor(),
-    ])(sample['mask']).byte()
+    sample['mask'] = transforms.Compose(transforms_list)(sample['mask']).byte()
 
     if weight_function:
         sample['weights'] = weight_function(sample['mask'].float())
@@ -117,7 +104,10 @@ class UnetDataset(Dataset, DataDescription):
                  valid_split = 0.25, #None,
                  valid_shuffle = True,
                  transform=None,
-                 weights_function=None):
+                 weight_function=None,
+                 aug_order=[],
+                 aug_values={}
+                 ):
         """
         Args:
             train (boolean): Shows whether it's trainable images or not
@@ -142,7 +132,9 @@ class UnetDataset(Dataset, DataDescription):
 
         self.img_gray = True if self.img_channels == 1 else False
         self.transform = transform
-        self.weights_function = weights_function
+        self.aug_order = aug_order
+        self.aug_values = aug_values
+        self.weight_function = weight_function
         self.is_train = True
 
     def __len__(self):
@@ -166,7 +158,10 @@ class UnetDataset(Dataset, DataDescription):
         sample = {'image': image, 'mask': mask}
 
         if self.transform:
-            sample = self.transform(sample, weights_function=self.weights_function)
+            sample = self.transform(sample, 
+                                    weight_function=self.weight_function, 
+                                    aug_order=self.aug_order,
+                                    aug_values=self.aug_values)
 
         return sample
 

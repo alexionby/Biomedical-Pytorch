@@ -25,7 +25,7 @@ parser = argparse.ArgumentParser(description='Setting model parameters')
 
 parser.add_argument('--depth', default=5, type=int, help="Unet depth")
 parser.add_argument('--n','--n_filters', type=int, default=6, help="2**N filters on first Layer")
-parser.add_argument('--ch', type=int, default=3, help="Num of channels")
+parser.add_argument('--ch', type=int, default=1, help="Num of channels")
 parser.add_argument('--cl','--n_classes', default=1, type=int, help="number of output channels(classes)")
 parser.add_argument('--pad', type=bool, default=True, help="""if True, apply padding such that the input shape
                                                                 is the same as the output.
@@ -59,7 +59,11 @@ def main():
                      up_mode=args.up_mode
                     )
 
-    dataset = UnetDataset(transform=transform, weights_function=balanced_weights)
+    dataset = UnetDataset(img_channels=1, #? for what this is here?
+                          transform=transform, 
+                          weight_function=balanced_weights,
+                          aug_order=['random_crop'],
+                          aug_values={'random_crop': 512})
 
     model.cuda()
 
@@ -67,10 +71,11 @@ def main():
     optimizer = SGD(model.parameters(), lr=0.1, momentum=0.9)
     scheduler = ReduceLROnPlateau(optimizer, 'min', patience=5, verbose=True, factor=0.25)
 
-    for epoch in range(50):
+    epochs = 150
+    for epoch in range(epochs):
 
         epoch_loss = 0
-        print("epoch: ", epoch)
+        print("epoch: ", epoch, '/', epochs)
 
         datagen = dataloader(dataset, batch_size=args.batch_size)
 
@@ -107,13 +112,14 @@ def main():
 
             inputs = Variable(sample_batched['image']).cuda()
             labels = Variable(sample_batched['mask']).cuda()
+            weights = Variable(sample_batched['weights']).cuda()
 
             optimizer.zero_grad()
             outputs = model(inputs)
 
             probs = F.sigmoid(outputs)
 
-            loss = F.binary_cross_entropy_with_logits(outputs, labels.float())
+            loss = F.binary_cross_entropy_with_logits(outputs, labels.float(), weight=weights) 
             epoch_loss += loss.data[0]
 
             #loss.backward()
