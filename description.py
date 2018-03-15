@@ -21,10 +21,8 @@ class DataDescription:
 
     
     def __init__(self, 
-                 img_channels = 3,
                  img_ext = common_extensions,
                  img_path = 'data/images',
-                 mask_channels = 1, 
                  mask_ext = common_extensions,
                  mask_path = 'data/masks',
                  common_length= None,
@@ -32,9 +30,7 @@ class DataDescription:
                  valid_shuffle = False,
                  ):
 
-        self.img_channels = img_channels
         self.img_path = img_path
-        self.mask_channels = mask_channels
         self.mask_path = mask_path
         
         self.images, self.masks = self.find_images(img_path, 

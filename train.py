@@ -43,7 +43,19 @@ parser.add_argument('--crop_size', help="Size of subimage for random crop", type
 args = parser.parse_args()
 print(args)
 
+input_data = {
+    'img_extensions' : None,
+    'img_path' : 'data/images',
+    'mask_extenstions' : None,
+    'mask_path' : 'data/masks',
+    'common_length' : None,
+    'valid_split' : None,
+    'valid_shuffle' : False,
 
+    'img_channels' : None,
+    'mask_channels' : None,
+    
+}
 
 def main():
     
