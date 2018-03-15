@@ -44,6 +44,7 @@ args = parser.parse_args()
 print(args)
 
 input_data = {
+    # Data parameters:
     'img_extensions' : None,
     'img_path' : 'data/images',
     'mask_extenstions' : None,
@@ -51,10 +52,29 @@ input_data = {
     'common_length' : None,
     'valid_split' : None,
     'valid_shuffle' : False,
-
+    
+    #Common parameters:
     'img_channels' : None,
     'mask_channels' : None,
     
+    # Augmentation parameters:
+    'weight_function' : None,
+    'augmentation_order' : [],
+    'augmentation_values' : {},
+
+    #Model parameters:
+    
+    'depth' : 3,
+    'n_filters' : 5,
+    'padding' : True,
+    'batch_norm' : True,
+    'up_mode' : 'upconv',
+
+    #'depth' : args.depth,
+    #'n_filters' : args.n,
+    #'padding' : args.pad,
+    #'batch_norm' : args.bn,
+    #'up_mode' : args.up_mode,
 }
 
 def main():
@@ -72,7 +92,7 @@ def main():
                     )
 
     dataset = UnetDataset(img_channels=1, #? for what this is here?
-                          transform=transform, 
+                          transform=transform, #no sense
                           weight_function=balanced_weights,
                           aug_order=['random_crop'],
                           aug_values={'random_crop': 512})
