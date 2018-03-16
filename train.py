@@ -78,7 +78,13 @@ input_data = {
 }
 
 def main():
-    
+
+    if not 'learn' in os.listdir():
+        os.mkdir('learn')
+        os.mkdir(os.path.join('learn','image'))
+        os.mkdir(os.path.join('learn','mask'))
+        os.mkdir(os.path.join('learn','pred'))
+
     if args.model:
         model = torch.load('model.pt')
     else:
@@ -94,10 +100,12 @@ def main():
     dataset = UnetDataset(img_channels=1, #? for what this is here?
                           transform=transform, #no sense
                           weight_function=balanced_weights,
-                          aug_order=['random_crop'],
-                          aug_values={'random_crop': 512})
+                          aug_order=['resize'],
+                          aug_values={'resize': (224,224)})
 
-    model.cuda()
+    use_cuda = torch.cuda.is_available()
+    if use_cuda:
+        model.cuda()
 
     # Observe that all parameters are being optimized
     optimizer = SGD(model.parameters(), lr=0.1, momentum=0.9)
@@ -113,9 +121,17 @@ def main():
 
         for i_batch, sample_batched in tqdm(enumerate(datagen)):
 
-            inputs = Variable(sample_batched['image']).cuda()
-            labels = Variable(sample_batched['mask']).cuda()
-            weights = Variable(sample_batched['weights']).cuda()
+            if i_batch == 5:
+                break
+
+            inputs = Variable(sample_batched['image'])
+            labels = Variable(sample_batched['mask'])
+            weights = Variable(sample_batched['weights'])
+
+            if use_cuda:
+                inputs = inputs.cuda()
+                labels = labels.cuda()
+                weights = weights.cuda()
 
             optimizer.zero_grad()
             outputs = model(inputs)
@@ -142,9 +158,17 @@ def main():
 
         for i_batch, sample_batched in tqdm(enumerate(datagen)):
 
-            inputs = Variable(sample_batched['image']).cuda()
-            labels = Variable(sample_batched['mask']).cuda()
-            weights = Variable(sample_batched['weights']).cuda()
+            if i_batch == 5:
+                break
+
+            inputs = Variable(sample_batched['image'])
+            labels = Variable(sample_batched['mask'])
+            weights = Variable(sample_batched['weights'])
+
+            if use_cuda:
+                inputs = inputs.cuda()
+                labels = labels.cuda()
+                weights = weights.cuda()
 
             optimizer.zero_grad()
             outputs = model(inputs)
@@ -160,13 +184,13 @@ def main():
             if i_batch == 2:
 
                 im = torchvision.transforms.ToPILImage()(probs.data[0].cpu())
-                im.save("learn/pred/" + str(epoch) + "_final.jpg" , "JPEG")
+                im.save(os.path.join("learn", "pred", str(epoch) + "_final.jpg"), "JPEG")
 
                 im = torchvision.transforms.ToPILImage()(sample_batched['mask'][0].float())
-                im.save("learn/mask/" + str(epoch) + "_final.jpg" , "JPEG")
+                im.save(os.path.join("learn", "mask", str(epoch) + "_final.jpg"), "JPEG")
                 
                 im = torchvision.transforms.ToPILImage()(sample_batched['image'][0])
-                im.save("learn/image/" + str(epoch) + "_final.jpg", "JPEG")
+                im.save(os.path.join("learn","image", str(epoch) + "_final.jpg"), "JPEG")
     
             del loss, probs, outputs, inputs, labels
             torch.cuda.empty_cache()

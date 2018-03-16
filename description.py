@@ -8,8 +8,8 @@ import numpy as np
 class DataDescription:    
 
     common_extensions = ['jpg','tif','png']
-    train_path = 'data/train'
-    valid_path = 'data/valid'
+    train_path = os.path.join('data','train')
+    valid_path = os.path.join('data','valid')
     images_folder = 'images'
     masks_folder = 'masks'
 
@@ -22,9 +22,9 @@ class DataDescription:
     
     def __init__(self, 
                  img_ext = common_extensions,
-                 img_path = 'data/images',
+                 img_path = os.path.join('data','images'),
                  mask_ext = common_extensions,
-                 mask_path = 'data/masks',
+                 mask_path = os.path.join('data','masks'),
                  common_length= None,
                  valid_split = None,
                  valid_shuffle = False,
@@ -96,14 +96,14 @@ class DataDescription:
         images = []
         masks = []
 
-        for image_name in tqdm(os.listdir(img_path)[:]):
+        for image_name in tqdm(os.listdir(img_path)):
             if image_name.split('.')[-1].lower() in img_ext:
                 for mask_name in glob.glob( os.path.join(mask_path , image_name[:common_length].split('.')[0] + '*')):
                     if mask_name.split('.')[-1].lower() in mask_ext:
                         images.append(image_name)
-                        masks.append(mask_name.split('/')[-1])
+                        masks.append(os.path.split(mask_name)[-1])
                         break
-
+                        
         return images, masks
 
 def main():

@@ -54,6 +54,7 @@ aug_dict = {
     'vertical_flip': transforms.RandomVerticalFlip,
     'horizontal_flip': transforms.RandomHorizontalFlip,
     'random_rotate': transforms.RandomRotation,
+    'resize': transforms.Resize,
 }
 
 def transform(sample,
@@ -96,10 +97,10 @@ class UnetDataset(Dataset, DataDescription):
     def __init__(self,
                  img_channels = 3,
                  img_ext = DataDescription.common_extensions,
-                 img_path = 'data/images',
+                 img_path = os.path.join('data','images'),
                  mask_channels = 1, 
                  mask_ext = DataDescription.common_extensions,
-                 mask_path = 'data/masks',
+                 mask_path = os.path.join('data','masks'),
                  common_length=5, #None,
                  valid_split = 0.25, #None,
                  valid_shuffle = True,
@@ -117,20 +118,18 @@ class UnetDataset(Dataset, DataDescription):
         """
 
         DataDescription.__init__(self,
-                                 img_channels,
                                  img_ext,
                                  img_path,
-                                 mask_channels, 
                                  mask_ext,
                                  mask_path,
                                  common_length,
                                  valid_split,
                                  valid_shuffle)
         
-        print('channels',self.img_channels)
+        #print('channels', self.img_channels)
         print(self.train_images_path)
 
-        self.img_gray = True if self.img_channels == 1 else False
+        self.img_gray = True if img_channels == 1 else False
         self.transform = transform
         self.aug_order = aug_order
         self.aug_values = aug_values
