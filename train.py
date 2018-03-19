@@ -121,9 +121,6 @@ def main():
 
         for i_batch, sample_batched in tqdm(enumerate(datagen)):
 
-            if i_batch == 5:
-                break
-
             inputs = Variable(sample_batched['image'])
             labels = Variable(sample_batched['mask'])
             weights = Variable(sample_batched['weights'])
@@ -157,9 +154,6 @@ def main():
         datagen = dataloader(dataset, batch_size=args.batch_size)
 
         for i_batch, sample_batched in tqdm(enumerate(datagen)):
-
-            if i_batch == 5:
-                break
 
             inputs = Variable(sample_batched['image'])
             labels = Variable(sample_batched['mask'])
