@@ -20,6 +20,7 @@ from PIL import Image
 import argparse
 from tqdm import tqdm
 import time
+import pickle
 
 parser = argparse.ArgumentParser(description='Setting model parameters')
 
@@ -40,14 +41,20 @@ parser.add_argument('--model', help="Path to model for loading")
 parser.add_argument('--batch_size', help="Size of batch", default=4, type=int )
 parser.add_argument('--crop_size', help="Size of subimage for random crop", type=int, default=512)
 
+parser.add_argument('--load_prev_path', help="Create new data split or use existing / Path to description file", default='dataInfo.pickle', type=str)
+
 args = parser.parse_args()
 print(args)
 
 input_data = {
+    # Load from pickle to continue train
+    'load_preconfigured': False,
+    'conf_file': None,
+
     # Data parameters:
     'img_extensions' : None,
     'img_path' : 'data/images',
-    'mask_extenstions' : None,
+    'mask_extensions' : None,
     'mask_path' : 'data/masks',
     'common_length' : None,
     'valid_split' : None,
@@ -56,14 +63,17 @@ input_data = {
     #Common parameters:
     'img_channels' : None,
     'mask_channels' : None,
-    
+}
+
+loader_params = {
     # Augmentation parameters:
     'weight_function' : None,
     'augmentation_order' : [],
     'augmentation_values' : {},
+}
 
+model_params = {
     #Model parameters:
-    
     'depth' : 3,
     'n_filters' : 5,
     'padding' : True,
@@ -85,8 +95,19 @@ def main():
         os.mkdir(os.path.join('learn','mask'))
         os.mkdir(os.path.join('learn','pred'))
 
+    #Data descr class
+
+    try:
+        with open(args.load_prev_path, "rb") as input_file:
+            dataInfo = pickle.load(input_file)
+    except FileNotFoundError:
+        print('File not found, creating new split')
+        dataInfo = DataDescription(**input_data)
+        with open(args.load_prev_path, "wb") as output_file:
+            pickle.dump(dataInfo, output_file)
+
     if args.model:
-        model = torch.load('model.pt')
+        model = torch.load(args.model)
     else:
         model = UNet(in_channels=args.ch,
                      n_classes=args.cl,
@@ -97,11 +118,11 @@ def main():
                      up_mode=args.up_mode
                     )
 
-    dataset = UnetDataset(img_channels=1, #? for what this is here?
-                          transform=transform, #no sense
+    dataset = UnetDataset(transform=transform, #no sense
                           weight_function=balanced_weights,
                           aug_order=['resize'],
-                          aug_values={'resize': (224,224)})
+                          aug_values={'resize': (224,224)},
+                          **input_data)
 
     use_cuda = torch.cuda.is_available()
     if use_cuda:

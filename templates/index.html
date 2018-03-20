@@ -5,8 +5,9 @@
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <!--Import materialize.css-->
     <link type="text/css" rel="stylesheet" href="../static/css/materialize.min.css"  media="screen,projection"/>
-    <link rel="stylesheet" href="../static/css/style.css">
+    <link type="text/css" rel="stylesheet" href="../static/noUiSlider/nouislider.css">
 
+    <link rel="stylesheet" href="../static/css/style.css">
     <!--Let browser know website is optimized for mobile-->
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   </head>
@@ -33,6 +34,23 @@
       <!-- <img src="../static/img/pytorch.svg"> -->
       <div id="Data" class="section scrollspy">
           <h2>Data</h2>
+          <div class="row">
+            <div class="input-field col s3">
+              <input value="data/images" id="img_path" type="text" class="validate">
+              <label class="active" for="img_path">Path to images</label>
+            </div>
+            <div class="input-field col s3">
+              <input value="data/masks" id="mask_path" type="text" class="validate">
+              <label class="active" for="mask_path">Path to masks</label>
+            </div>
+            <div class="input-field col s3">
+              <span>car_img_01.png</span>
+              <span class="right">car_mask_01.png</span>
+              <!--<input type="range" id="test5" value="0" min="-50" max="50" />-->
+              <label class="active" for="mask_path">Common filename length (with example)</label>
+              <div id="test-slider" style="margin-top:1.45rem"></div>
+            </div>
+          </div>
           <blockquote>
             Validation split:
           </blockquote>
@@ -47,8 +65,9 @@
           <p class="range-field">
             <input type="range" id="test5" value="25" min="0" max="100" step="5"/>
           </p>
-
       </div>
+      <div class="divider"></div>
+
       <div id="Augmentations" class="section scrollspy">
           <h2>Augmentations</h2>
           <blockquote>
@@ -80,6 +99,25 @@
 
     <!--JavaScript at end of body for optimized loading-->
     <script type="text/javascript" src="../static/js/materialize.min.js"></script>
+    <script type="text/javascript" src="../static/noUiSlider/nouislider.min.js"></script>
+    <script>
+    
+        var slider = document.getElementById('test-slider');
+        noUiSlider.create(slider, {
+        start: [20, 80],
+        connect: true,
+        step: 1,
+        orientation: 'horizontal', // 'horizontal' or 'vertical'
+        range: {
+          'min': 0,
+          'max': 100
+        },
+        format: wNumb({
+          decimals: 0
+        })
+        });
+    
+      </script>
   </body>
 </html>
       

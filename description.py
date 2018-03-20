@@ -20,6 +20,7 @@ class DataDescription:
     valid_masks_path = os.path.join(valid_path, masks_folder)
 
     
+    """    
     def __init__(self, 
                  img_ext = common_extensions,
                  img_path = os.path.join('data','images'),
@@ -29,18 +30,21 @@ class DataDescription:
                  valid_split = None,
                  valid_shuffle = False,
                  ):
+    """
+    
+    def __init__(self, **kwargs):
 
-        self.img_path = img_path
-        self.mask_path = mask_path
+        self.img_path = kwargs.get('img_path', os.path.join('data','images'))
+        self.mask_path = kwargs.get('mask_path', os.path.join('data','masks'))
         
-        self.images, self.masks = self.find_images(img_path, 
-                                                   img_ext, 
-                                                   mask_path, 
-                                                   mask_ext, 
-                                                   common_length)
+        self.images, self.masks = self.find_images(self.img_path,
+                                                kwargs['img_extensions'] or self.common_extensions, 
+                                                self.mask_path,
+                                                kwargs['mask_extensions'] or self.common_extensions, 
+                                                kwargs['common_length'] or None)
 
-        if valid_split:
-            self.make_split(valid_split, valid_shuffle)
+        if kwargs['valid_split']:
+            self.make_split(kwargs['valid_split'], kwargs['valid_shuffle'])
         else:
             self.train_images = self.images
             self.train_masks = self.masks

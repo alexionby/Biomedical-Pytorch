@@ -91,45 +91,24 @@ def transform(sample,
 
     return sample
 
+
 class UnetDataset(Dataset, DataDescription):
     """Unet images and masks"""
 
     def __init__(self,
-                 img_channels = 3,
-                 img_ext = DataDescription.common_extensions,
-                 img_path = os.path.join('data','images'),
-                 mask_channels = 1, 
-                 mask_ext = DataDescription.common_extensions,
-                 mask_path = os.path.join('data','masks'),
-                 common_length=5, #None,
-                 valid_split = 0.25, #None,
-                 valid_shuffle = True,
                  transform=None,
                  weight_function=None,
                  aug_order=[],
-                 aug_values={}
+                 aug_values={},
+                 **kwargs
                  ):
-        """
-        Args:
-            train (boolean): Shows whether it's trainable images or not
-            img_grayscale (boolean): "RGB" or "GR img_gray=self.img_grayAY"
-            transform (callable, optional): Optional transform to be applied
-                on images and masks sample.
-        """
 
-        DataDescription.__init__(self,
-                                 img_ext,
-                                 img_path,
-                                 mask_ext,
-                                 mask_path,
-                                 common_length,
-                                 valid_split,
-                                 valid_shuffle)
-        
-        #print('channels', self.img_channels)
+        print(kwargs)
+
+        DataDescription.__init__(self, **kwargs)
+
         print(self.train_images_path)
 
-        self.img_gray = True if img_channels == 1 else False
         self.transform = transform
         self.aug_order = aug_order
         self.aug_values = aug_values
