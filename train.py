@@ -22,6 +22,8 @@ from tqdm import tqdm
 import time
 import pickle
 
+import numpy as np
+
 parser = argparse.ArgumentParser(description='Setting model parameters')
 
 parser.add_argument('--depth', default=5, type=int, help="Unet depth")
@@ -39,7 +41,7 @@ parser.add_argument('--up_mode', default='upconv', choices=['upconv', 'upsample'
                                                                             'upsample' will use bilinear upsampling.""")
 parser.add_argument('--model', help="Path to model for loading")
 parser.add_argument('--batch_size', help="Size of batch", default=4, type=int )
-parser.add_argument('--crop_size', help="Size of subimage for random crop", type=int, default=512)
+parser.add_argument('--crop_size', help="Size of subimage for random crop", type=int, default=112)
 
 parser.add_argument('--load_prev_path', help="Create new data split or use existing / Path to description file", default='dataInfo.pickle', type=str)
 
@@ -57,7 +59,7 @@ input_data = {
     'mask_extensions' : None,
     'mask_path' : 'data/masks',
     'common_length' : None,
-    'valid_split' : None,
+    'valid_split' : 0.25,
     'valid_shuffle' : False,
     
     #Common parameters:
@@ -94,9 +96,16 @@ def main():
         os.mkdir(os.path.join('learn','image'))
         os.mkdir(os.path.join('learn','mask'))
         os.mkdir(os.path.join('learn','pred'))
+    
+    if not 'train' in os.listdir('data'):
+        os.mkdir(os.path.join('data','train'))
+    
+    if not 'valid' in os.listdir('data'):
+        os.mkdir(os.path.join('data','valid'))
 
     #Data descr class
 
+    """
     try:
         with open(args.load_prev_path, "rb") as input_file:
             dataInfo = pickle.load(input_file)
@@ -105,6 +114,7 @@ def main():
         dataInfo = DataDescription(**input_data)
         with open(args.load_prev_path, "wb") as output_file:
             pickle.dump(dataInfo, output_file)
+    """
 
     if args.model:
         model = torch.load(args.model)
@@ -120,8 +130,8 @@ def main():
 
     dataset = UnetDataset(transform=transform, #no sense
                           weight_function=balanced_weights,
-                          aug_order=['resize'],
-                          aug_values={'resize': (224,224)},
+                          aug_order=['random_crop','vertical_flip','horizontal_flip'], #,'random_rotate'],
+                          aug_values={'random_crop': [(112,112)]}, #, 'random_rotate': [45, 3]},
                           **input_data)
 
     use_cuda = torch.cuda.is_available()
@@ -129,10 +139,10 @@ def main():
         model.cuda()
 
     # Observe that all parameters are being optimized
-    optimizer = SGD(model.parameters(), lr=0.1, momentum=0.9)
+    optimizer = SGD(model.parameters(), lr=0.4, momentum=0.9)
     scheduler = ReduceLROnPlateau(optimizer, 'min', patience=5, verbose=True, factor=0.25)
 
-    epochs = 150
+    epochs = 150 + 450
     for epoch in range(epochs):
 
         epoch_loss = 0
@@ -196,7 +206,7 @@ def main():
             #loss.backward()
             #optimizer.step()
 
-            if i_batch == 2:
+            if i_batch == 0:
 
                 im = torchvision.transforms.ToPILImage()(probs.data[0].cpu())
                 im.save(os.path.join("learn", "pred", str(epoch) + "_final.jpg"), "JPEG")
@@ -205,7 +215,7 @@ def main():
                 im.save(os.path.join("learn", "mask", str(epoch) + "_final.jpg"), "JPEG")
                 
                 im = torchvision.transforms.ToPILImage()(sample_batched['image'][0])
-                im.save(os.path.join("learn","image", str(epoch) + "_final.jpg"), "JPEG")
+                im.save(os.path.join("learn", "image", str(epoch) + "_final.jpg"), "JPEG")
     
             del loss, probs, outputs, inputs, labels
             torch.cuda.empty_cache()

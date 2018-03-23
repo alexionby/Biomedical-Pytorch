@@ -1,21 +1,17 @@
 from __future__ import print_function, division
 import os
-import random
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
 from torch.utils.data import Dataset, DataLoader
-from torchvision import transforms, utils
+from torchvision import utils
+
 from PIL import Image
 #import cv2
 
-from skimage.morphology import binary_erosion, binary_dilation
-from skimage.exposure import rescale_intensity
-from skimage.color import rgb2gray
-
-import time
-
-from matplotlib import pyplot as plt
+#from skimage.morphology import binary_erosion, binary_dilation
+#from skimage.exposure import rescale_intensity
+#from skimage.color import rgb2gray
 
 from torchvision.datasets.folder import IMG_EXTENSIONS
 IMG_EXTENSIONS.append('tiff')
@@ -27,70 +23,7 @@ warnings.filterwarnings("ignore")
 
 #my import
 from description import DataDescription
-from weights import balanced_weights
-
-"""
-def __getitem__(self,index):      
-    img = Image.open(self.data[index]).convert('RGB')
-    target = Image.open(self.data_labels[index])
-    
-    seed = np.random.randint(2147483647) # make a seed with numpy generator 
-    random.seed(seed) # apply this seed to img tranfsorms
-    if self.transform is not None:
-        img = self.transform(img)
-        
-    random.seed(seed) # apply this seed to target tranfsorms
-    if self.target_transform is not None:
-        target = self.target_transform(target)
-
-    target = torch.ByteTensor(np.array(target))
-
-    return img, target
-"""
-
-aug_dict = {
-    'random_crop': transforms.RandomCrop,
-    'center_crop': transforms.CenterCrop,
-    'vertical_flip': transforms.RandomVerticalFlip,
-    'horizontal_flip': transforms.RandomHorizontalFlip,
-    'random_rotate': transforms.RandomRotation,
-    'resize': transforms.Resize,
-}
-
-def transform(sample,
-              weight_function=False,
-              aug_order = [],
-              aug_values = {},
-              ):
-    
-    transforms_list = []
-
-    #args represent the order
-    for augmentation in aug_order:
-        if augmentation in aug_values:
-            transforms_list.append(aug_dict[augmentation](aug_values[augmentation]))
-        else:
-            transforms_list.append(aug_dict[augmentation])
-    
-    transforms_list.append(transforms.ToTensor())
-
-    t = time.time()
-    try:
-        seed = int(str(t-int(t))[2:])
-    except ValueError:
-        seed = int(str(t-int(t))[2:-4])
-
-    random.seed(seed)
-    sample['image'] = transforms.Compose(transforms_list)(sample['image'])
-
-    random.seed(seed)
-    sample['mask'] = transforms.Compose(transforms_list)(sample['mask']).byte()
-
-    if weight_function:
-        sample['weights'] = weight_function(sample['mask'].float())
-
-    return sample
-
+from transforms import transform
 
 class UnetDataset(Dataset, DataDescription):
     """Unet images and masks"""
@@ -153,7 +86,7 @@ def dataloader(dataset, batch_size=2, crop_in=512, crop_out=512):
     datagen = DataLoader(dataset, 
                             batch_size=batch_size,
                             shuffle=True, 
-                            num_workers=4)
+                            num_workers=8)
 
     return datagen
 

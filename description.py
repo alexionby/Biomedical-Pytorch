@@ -56,7 +56,11 @@ class DataDescription:
 
     @staticmethod
     def create_dir_and_copy(filenames, path_from, path_to):
-        shutil.rmtree(path_to)
+        try:
+            shutil.rmtree(path_to)
+            print('Recreating dir')
+        except:
+            print('Creating new dir')
         os.mkdir(path_to)
         for filename in tqdm(filenames):
             shutil.copyfile(os.path.join(path_from, filename), os.path.join(path_to, filename))
@@ -80,8 +84,14 @@ class DataDescription:
 
         if valid_shuffle:
             images, masks = shuffle(self.images, self.masks, random_state=0)
+            print(images[:10])
+            print(masks[:10])
         else:
             images, masks = self.images, self.masks
+            images = sorted(images, key=lambda x: int(x.split('.')[0]))
+            masks = sorted(masks, key=lambda x: int(x.split('.')[0]))
+            print(images[:15])
+            print(masks[:15])
 
         split_value = int(len(images) * (1 - valid_split))
 
@@ -91,8 +101,8 @@ class DataDescription:
         self.valid_images = images[split_value:]
         self.valid_masks = masks[split_value:]
 
-        print('Train size: ', len(self.train_images)) 
-        print('Validation size: ', len(self.valid_images))
+        print('Train size: ', len(self.train_images), len(self.train_masks)) 
+        print('Validation size: ', len(self.valid_images), len(self.valid_masks))
 
     
     def find_images(self, img_path, img_ext, mask_path, mask_ext, common_length):
@@ -102,12 +112,13 @@ class DataDescription:
 
         for image_name in tqdm(os.listdir(img_path)):
             if image_name.split('.')[-1].lower() in img_ext:
-                for mask_name in glob.glob( os.path.join(mask_path , image_name[:common_length].split('.')[0] + '*')):
+                image_name = image_name if not common_length else (image_name[:common_length].split('.')[0] + '*')
+                for mask_name in glob.glob( os.path.join(mask_path , image_name)):
                     if mask_name.split('.')[-1].lower() in mask_ext:
                         images.append(image_name)
                         masks.append(os.path.split(mask_name)[-1])
                         break
-                        
+        
         return images, masks
 
 def main():
