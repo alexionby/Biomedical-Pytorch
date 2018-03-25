@@ -1,5 +1,12 @@
 # BioMedical-PyTorch
-# Pytorch-Unet-BSMU
+
+## First of all, you have to put your data in next folders:
+
+    ### data/images - for images
+    ### data/masks - for masks
+    ### data/weights - for weights
+
+    All files must have absolutly the same name, but extension may vary
 
 Inspiration:
 - https://github.com/meetshah1995/pytorch-semseg

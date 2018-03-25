@@ -1,17 +1,12 @@
-from __future__ import print_function, division
 import os
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
+
 from torch.utils.data import Dataset, DataLoader
 from torchvision import utils
 
 from PIL import Image
-#import cv2
-
-#from skimage.morphology import binary_erosion, binary_dilation
-#from skimage.exposure import rescale_intensity
-#from skimage.color import rgb2gray
 
 from torchvision.datasets.folder import IMG_EXTENSIONS
 IMG_EXTENSIONS.append('tiff')
@@ -59,14 +54,27 @@ class UnetDataset(Dataset, DataDescription):
         if self.is_train:
             img_name = os.path.join(self.train_images_path, self.train_images[idx])
             mask_name = os.path.join(self.train_masks_path, self.train_masks[idx])
+            weight_name = os.path.join(self.train_weights_path, self.train_weights[idx])
         else:
             img_name = os.path.join(self.valid_images_path, self.valid_images[idx])
             mask_name = os.path.join(self.valid_masks_path, self.valid_masks[idx])
+            weight_name = os.path.join(self.valid_weights_path, self.valid_weights[idx])
 
         image = Image.open(img_name)
-        mask  = Image.open(mask_name)
+        image = image.convert('RGB')
 
-        sample = {'image': image, 'mask': mask}
+        mask  = Image.open(mask_name)
+        r, b, mask = mask.split()
+
+        if weight_name is not None:
+            weight = Image.open(weight_name)
+            #weight = np.asarray(weight)
+            #weight = 10 * weight / 256**2
+            #weight = Image.fromarray(weight)
+
+            sample = {'image': image, 'mask': mask, 'weights': weight}
+        else:
+            sample = {'image': image, 'mask': mask}
 
         if self.transform:
             sample = self.transform(sample, 

@@ -28,7 +28,7 @@ parser = argparse.ArgumentParser(description='Setting model parameters')
 
 parser.add_argument('--depth', default=5, type=int, help="Unet depth")
 parser.add_argument('--n','--n_filters', type=int, default=6, help="2**N filters on first Layer")
-parser.add_argument('--ch', type=int, default=1, help="Num of channels")
+parser.add_argument('--ch', type=int, default=1, help="Num of input channels")
 parser.add_argument('--cl','--n_classes', default=1, type=int, help="number of output channels(classes)")
 parser.add_argument('--pad', type=bool, default=True, help="""if True, apply padding such that the input shape
                                                                 is the same as the output.
@@ -58,13 +58,14 @@ input_data = {
     'img_path' : 'data/images',
     'mask_extensions' : None,
     'mask_path' : 'data/masks',
-    'common_length' : None,
+    'weight_extensions' : None,
+    'weight_path': 'data/weights',
     'valid_split' : 0.25,
     'valid_shuffle' : False,
     
     #Common parameters:
-    'img_channels' : None,
-    'mask_channels' : None,
+    'img_channels' : args.ch,
+    'mask_channels' : args.cl,
 }
 
 loader_params = {
@@ -76,17 +77,11 @@ loader_params = {
 
 model_params = {
     #Model parameters:
-    'depth' : 3,
-    'n_filters' : 5,
-    'padding' : True,
-    'batch_norm' : True,
-    'up_mode' : 'upconv',
-
-    #'depth' : args.depth,
-    #'n_filters' : args.n,
-    #'padding' : args.pad,
-    #'batch_norm' : args.bn,
-    #'up_mode' : args.up_mode,
+    'depth' : args.depth, # 3
+    'n_filters' : args.n, # 5
+    'padding' : args.pad, # True
+    'batch_norm' : args.bn, # True
+    'up_mode' : args.up_mode, #upconv
 }
 
 def main():
@@ -131,7 +126,7 @@ def main():
     dataset = UnetDataset(transform=transform, #no sense
                           weight_function=balanced_weights,
                           aug_order=['random_crop','vertical_flip','horizontal_flip'], #,'random_rotate'],
-                          aug_values={'random_crop': [(112,112)]}, #, 'random_rotate': [45, 3]},
+                          aug_values={'random_crop': [(224,224)]}, #, 'random_rotate': [45, 3]},
                           **input_data)
 
     use_cuda = torch.cuda.is_available()
@@ -139,10 +134,10 @@ def main():
         model.cuda()
 
     # Observe that all parameters are being optimized
-    optimizer = SGD(model.parameters(), lr=0.4, momentum=0.9)
+    optimizer = SGD(model.parameters(), lr=0.1, momentum=0.9)
     scheduler = ReduceLROnPlateau(optimizer, 'min', patience=5, verbose=True, factor=0.25)
 
-    epochs = 150 + 450
+    epochs = 250
     for epoch in range(epochs):
 
         epoch_loss = 0

@@ -1,5 +1,6 @@
 import time
 import random
+import torch
 
 from torchvision import transforms
 from weights import balanced_weights
@@ -53,8 +54,12 @@ def transform(sample,
     random.seed(seed)
     sample['mask'] = transforms.Compose(transforms_list)(sample['mask']).byte()
 
-    if weight_function:
-        sample['weights'] = weight_function(sample['mask'].float())
+    if len(sample) == 2:
+        if weight_function:
+            sample['weights'] = weight_function(sample['mask'].float())
+    elif len(sample) == 3:
+        random.seed(seed)
+        sample['weights'] = torch.div(transforms.Compose(transforms_list)(sample['weights']).float(), 256**2/10 ) 
 
     return sample
 

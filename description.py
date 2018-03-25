@@ -10,47 +10,42 @@ class DataDescription:
     common_extensions = ['jpg','tif','png']
     train_path = os.path.join('data','train')
     valid_path = os.path.join('data','valid')
+
     images_folder = 'images'
     masks_folder = 'masks'
+    weights_folder = 'weights'
 
     train_images_path = os.path.join(train_path, images_folder)
     train_masks_path = os.path.join(train_path, masks_folder)
+    train_weights_path = os.path.join(train_path, weights_folder)
 
     valid_images_path = os.path.join(valid_path, images_folder)
     valid_masks_path = os.path.join(valid_path, masks_folder)
-
-    
-    """    
-    def __init__(self, 
-                 img_ext = common_extensions,
-                 img_path = os.path.join('data','images'),
-                 mask_ext = common_extensions,
-                 mask_path = os.path.join('data','masks'),
-                 common_length= None,
-                 valid_split = None,
-                 valid_shuffle = False,
-                 ):
-    """
+    valid_weights_path = os.path.join(valid_path, weights_folder)
     
     def __init__(self, **kwargs):
 
         self.img_path = kwargs.get('img_path', os.path.join('data','images'))
         self.mask_path = kwargs.get('mask_path', os.path.join('data','masks'))
-        
-        self.images, self.masks = self.find_images(self.img_path,
+        self.weight_path = kwargs.get('weight_path', os.path.join('data','weights'))
+
+        self.images, self.masks, self.weights = self.find_images(self.img_path,
                                                 kwargs['img_extensions'] or self.common_extensions, 
                                                 self.mask_path,
-                                                kwargs['mask_extensions'] or self.common_extensions, 
-                                                kwargs['common_length'] or None)
+                                                kwargs['mask_extensions'] or self.common_extensions,
+                                                self.weight_path,
+                                                kwargs['weight_extensions'] or self.common_extensions)
 
         if kwargs['valid_split']:
             self.make_split(kwargs['valid_split'], kwargs['valid_shuffle'])
         else:
             self.train_images = self.images
             self.train_masks = self.masks
+            self.train_weights = self.weights
 
             self.valid_images = None
             self.valid_masks = None
+            self.valid_weights = None
         
         self.create_dataset()
 
@@ -70,10 +65,14 @@ class DataDescription:
         if self.train_images and self.train_masks:
             DataDescription.create_dir_and_copy(self.train_images, self.img_path, self.train_images_path)
             DataDescription.create_dir_and_copy(self.train_masks, self.mask_path, self.train_masks_path)
-        
+            if None not in self.train_weights:
+                DataDescription.create_dir_and_copy(self.train_weights, self.weight_path, self.train_weights_path)
+
         if self.valid_images and self.valid_masks:
             DataDescription.create_dir_and_copy(self.valid_images, self.img_path, self.valid_images_path)
             DataDescription.create_dir_and_copy(self.valid_masks, self.mask_path, self.valid_masks_path)
+            if None not in self.valid_weights:
+                DataDescription.create_dir_and_copy(self.valid_weights, self.weight_path, self.valid_weights_path)
 
     def make_split(self, valid_split, valid_shuffle=True):
 
@@ -83,13 +82,13 @@ class DataDescription:
             raise ValueError('Split value must be in (0,1) range!')
 
         if valid_shuffle:
-            images, masks = shuffle(self.images, self.masks, random_state=0)
-            print(images[:10])
-            print(masks[:10])
+            images, masks, weights = shuffle(self.images, self.masks, self.weights, random_state=0)
+            print(images[:15])
+            print(masks[:15])
         else:
-            images, masks = self.images, self.masks
-            images = sorted(images, key=lambda x: int(x.split('.')[0]))
-            masks = sorted(masks, key=lambda x: int(x.split('.')[0]))
+            images, masks, weights = self.images, self.masks, self.weights
+            #images = sorted(images, key=lambda x: int(x.split('.')[0]))
+            #masks = sorted(masks, key=lambda x: int(x.split('.')[0]))
             print(images[:15])
             print(masks[:15])
 
@@ -97,29 +96,42 @@ class DataDescription:
 
         self.train_images = images[:split_value]
         self.train_masks = masks[:split_value]
+        self.train_weights = weights[:split_value]
 
         self.valid_images = images[split_value:]
         self.valid_masks = masks[split_value:]
+        self.valid_weights = weights[split_value:]
 
-        print('Train size: ', len(self.train_images), len(self.train_masks)) 
-        print('Validation size: ', len(self.valid_images), len(self.valid_masks))
+        print('Train size: ', len(self.train_images), len(self.train_masks), len(self.train_weights)) 
+        print('Validation size: ', len(self.valid_images), len(self.valid_masks), len(self.valid_weights))
 
     
-    def find_images(self, img_path, img_ext, mask_path, mask_ext, common_length):
+    def find_images(self, img_path, img_ext, mask_path, mask_ext, weight_path, weight_ext):
         
-        images = []
-        masks = []
+        images, masks, weights = [], [], []
 
         for image_name in tqdm(os.listdir(img_path)):
             if image_name.split('.')[-1].lower() in img_ext:
-                image_name = image_name if not common_length else (image_name[:common_length].split('.')[0] + '*')
-                for mask_name in glob.glob( os.path.join(mask_path , image_name)):
-                    if mask_name.split('.')[-1].lower() in mask_ext:
+                sub_name = image_name.split('.')[-2] + '.'
+                for mask_name in os.listdir(mask_path):
+                    if mask_name.startswith(sub_name) and mask_name.split('.')[-1] in mask_ext:
                         images.append(image_name)
-                        masks.append(os.path.split(mask_name)[-1])
+                        masks.append(mask_name)
+                        break
+                else:
+                    raise 'Mask not found'
+            
+                for weight_name in os.listdir(weight_path):
+                    if weight_name.startswith(sub_name) and weight_name.split('.')[-1] in weight_ext:
+                        weights.append(weight_name)
                         break
         
-        return images, masks
+        assert len(images) == len(masks), 'Number of images not equal number of masks.'
+        
+        if len(images) == len(masks) == len(weights):
+            return images, masks, weights
+        else:
+            return images, masks, [None] * len(images)
 
 def main():
     """Tests should be here"""
